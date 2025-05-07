@@ -231,5 +231,3 @@ Use credentials:
   * CIDR: `192.168.X.0/24`
 
 ---
-
-Let me know if you want this exported as a `.md` file.
