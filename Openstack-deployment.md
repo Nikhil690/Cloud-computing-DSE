@@ -1,63 +1,43 @@
-# **OPENSTACK-deployment**
-
-## Setup EC2 instance
 
 ---
+
+# **OpenStack Deployment on EC2**
 
 ## **Prerequisites**
 
-- **AMI (OS)**: Ubuntu 22.04 LTS
-- **Instance Type**: `t2.large` (2 vCPUs, 8GB RAM)
-- **Storage**: Increase to at least 30GB (default 8GB is too small)
-- **Security Group Rules**:
-  - **SSH (22)**: Your IP
-  - **HTTP (80, 443)**: Open for Openstack Dashboard
-- **Key Pair**: Create or use an existing SSH key
+* **Operating System (AMI)**: Ubuntu 22.04 LTS
+* **Instance Type**: `t2.large` (2 vCPUs, 8 GB RAM)
+* **Storage**: Minimum 30 GB
+* **Security Group**:
 
-![1](https://github.com/user-attachments/assets/50e138ee-5e2f-4c40-ad13-5093e3e64b7c)
-
-![1](https://github.com/user-attachments/assets/b5ff89c4-9e64-4e8e-b7b8-ddc5f283f969)
+  * SSH (Port 22): Allow from your IP
+  * HTTP/HTTPS (Ports 80, 443): Allow from anywhere for dashboard access
+* **Key Pair**: Create or use an existing SSH key
 
 ---
 
-## **1. Connect to the EC2 Instance using PuTTY**
+## **1. Connect to EC2 Using PuTTY (Windows)**
 
-1. **Download PuTTY**:  
-   If you don't have PuTTY installed on your machine, download it from [here](https://www.putty.org/) and install it.
+### a. Download and Install PuTTY
 
-2. **Convert PEM to PPK**:
-   PuTTY does not support `.pem` key files directly, so you need to convert the `.pem` file to the **PPK** (PuTTY Private Key) format.
+Download from: [https://www.putty.org/](https://www.putty.org/)
 
-   a. Open **PuTTYgen** (which is installed along with PuTTY).
+### b. Convert PEM to PPK
 
-   b. In **PuTTYgen**, click **Load** and select your `.pem` file.
+1. Open **PuTTYgen**
+2. Click **Load**, select the `.pem` file
+3. Click **Save private key** to generate a `.ppk` file
 
-   c. Once loaded, click **Save private key** to save the key in the `.ppk` format.
+### c. Connect via PuTTY
 
-3. **Find the Public IP Address** of your EC2 instance:  
-   You can find the public IP address of your EC2 instance in the **EC2 Dashboard** under **Instances**.
-
-4. **Launch PuTTY**:
-
-   a. Open **PuTTY** on your machine.
-
-   b. In the **Host Name (or IP address)** field, enter the **Public IP Address** of your EC2 instance.
-
-   c. In the **Connection Type** section, ensure that **SSH** is selected (which is the default).
-
-   d. Under **Category**, navigate to **Connection > SSH > Auth**.
-
-   e. Click **Browse** and select the `.ppk` file you generated earlier.
-
-5. **Connect to the EC2 Instance**:  
-   Now, click **Open** to start the SSH session. The first time you connect, you’ll be asked to confirm the security fingerprint. Click **Yes** to continue.
-
-6. **Login to the Instance**:  
-   You should be prompted to login. For an Ubuntu instance, the default username is **`ubuntu`**. So, type `ubuntu` and hit **Enter**.
+1. Open **PuTTY**
+2. Enter the **public IP address** of your EC2 instance
+3. Under **Connection > SSH > Auth**, select the `.ppk` file
+4. Click **Open** and login with username: `ubuntu`
 
 ---
 
-## **2. Update System and Install Dependencies**
+## **2. System Update and Dependency Installation**
 
 ```bash
 sudo apt update && sudo apt upgrade -y
@@ -66,25 +46,25 @@ sudo apt install -y git python3-dev python3-pip net-tools
 
 ---
 
-## **3. Clone Devstack Repository**
+## **3. Clone DevStack**
 
 ```bash
 git clone https://opendev.org/openstack/devstack.git
 cd devstack
 ```
 
-![2](https://github.com/user-attachments/assets/16e25228-b9a1-4e67-aed7-7eaf1b8bf760)
-
 ---
 
-## **4. Create Devstack Configuration**
+## **4. Configure DevStack**
 
-- Create a configuration file:
+Create the `local.conf` configuration file:
+
 ```bash
 nano local.conf
 ```
 
-- Paste the following:
+Paste the following content:
+
 ```ini
 [[local|localrc]]
 ADMIN_PASSWORD=SuperSecret
@@ -92,246 +72,164 @@ DATABASE_PASSWORD=$ADMIN_PASSWORD
 RABBIT_PASSWORD=$ADMIN_PASSWORD
 SERVICE_PASSWORD=$ADMIN_PASSWORD
 
-# Set Host IP (Detects Automatically)
 HOST_IP=$(hostname -I | awk '{print $1}')
 
-# Enable Only Essential Services
 disable_service tempest
 disable_service cinder
 disable_service swift
 disable_service heat
 
-# Use Latest OpenStack Release
 USE_PYTHON3=True
 GIT_BASE=https://opendev.org
 ```
 
-![3](https://github.com/user-attachments/assets/909e05e4-5b86-431d-bc5d-d5cd944f5cc3)
-
 ---
 
-## **5. Install Openstack Using Devstack**
+## **5. Install OpenStack**
 
-- Run the installation (takes ~30-45 mins):
+Run the DevStack installer (takes \~30-45 mins):
+
 ```bash
 ./stack.sh
 ```
-☑️ If successful, you’ll see `DevStack installed successfully!`.
 
-![Screenshot 2025-03-05 095729](https://github.com/user-attachments/assets/aca4739a-679f-4c6b-a16a-f3e94c570d45)
+If successful, you’ll see a message indicating completion.
 
 ---
 
-## **6. Access Openstack Dashboard**
+## **6. Access the OpenStack Dashboard**
 
-- Open Horizon Web UI:
-```bash
-http://your-ec2-public-ip/dashboard
+Open your browser and navigate to:
+
+```
+http://<your-ec2-public-ip>/dashboard
 ```
 
-![5](https://github.com/user-attachments/assets/9c52caf9-d219-4c64-93f7-fc337c989862)
+Login credentials:
 
-- Login Details:
-  - Username: `admin`
-  - Password: `SuperSecret` (from `local.conf`)
-
-![2](https://github.com/user-attachments/assets/fbc9613d-1b27-40e4-a796-7f73c8188c9f)
-
-![3](https://github.com/user-attachments/assets/44e9abe2-b0f7-43d7-ac40-698ecdf9f346)
+* **Username**: `admin`
+* **Password**: `SuperSecret`
 
 ---
 
-## **7. Verify Openstack is Running**
+## **7. Verify OpenStack Services**
 
-- Run:
+Source the environment:
+
 ```bash
 source openrc admin admin
+```
+
+Check services:
+
+```bash
 openstack service list
 ```
-☑️ If services are listed, OpenStack is running! 🎉
-
-![8](https://github.com/user-attachments/assets/eabc6c4f-6525-42d4-9688-649a3524704f)
 
 ---
 
-## **8. Verification of Each Service**
+## **8. Verify Each Service**
 
-To verify each service (Horizon, Neutron, Keystone, etc) is active and running we will run the following commands:
+### Keystone
 
-- **Keystone (Identity Service)**
 ```bash
 openstack token issue
 ```
-☑️ If successful, Keystone is working.
 
-![1](https://github.com/user-attachments/assets/9e8eab7b-9cce-42a2-b3f4-14385091d8cb)
+### Horizon
 
----
-
-- **Horizon (Dashboard)**
-  - Check if Apache is running:
-  ```bash
-  sudo systemctl status apache2
-  ```
-  - If it's inactive restart it:
-  ```bash
-  sudo systemctl restart apache2
-  ```
-  - Then access Horizon in a browser:
-  ```bash
-  http://your-ec2-public-ip/dashboard
-  ```
-
-![2](https://github.com/user-attachments/assets/4cc069f6-bcb3-4229-bce2-b8f35578f16a)
-
----
-
-- **Neutron (Networking)**
-  - Check network agents:
-  ```bash
-  openstack network agent list
-  ```
-☑️ If agents are `:-) Alive`, Neutron is working.
-
-![3](https://github.com/user-attachments/assets/f2a42f0c-1039-4520-8bc8-8a5ed6c600c3)
-
----
-
-- **Nova (Compute)**
-  - Check compute services:
-  ```bash
-  openstack compute service list
-  ```
-☑️ If `nova-compute` is listed as `up`, Nova is running.
-
-![4](https://github.com/user-attachments/assets/4760952c-0296-4f87-aa5e-d9d5c0b3d48c)
-
----
-
-- **Glance (Image Service)**
-  - Check available images:
-  ```bash
-  openstack image list
-  ```
-☑️ If images appear, Glance is working.
-
-![5](https://github.com/user-attachments/assets/fb69bd58-5a6e-4855-94e7-ffb63ed4c3ef)
-
----
-
-- **Cinder (Block Storage)**
-  - Check storage services:
-  ```bash
-  openstack volume service list
-  ```
-☑️ If `cinder` services are `up`, Cinder is working.
-
-![6](https://github.com/user-attachments/assets/93d6dddc-7b11-4988-8119-5a544008907a)
-
----
-
-## **9. Service Down**
-
-- If a service is missing or down try restarting the specific service:
 ```bash
-sudo systemctl restart devstack@keystone
+sudo systemctl status apache2
 ```
-Replace `keystone` with the failing service (e.g., `nova`, `neutron`, `glance`, etc.).
+
+If inactive:
+
+```bash
+sudo systemctl restart apache2
+```
+
+### Neutron
+
+```bash
+openstack network agent list
+```
+
+### Nova
+
+```bash
+openstack compute service list
+```
+
+### Glance
+
+```bash
+openstack image list
+```
+
+### Cinder (if enabled)
+
+```bash
+openstack volume service list
+```
 
 ---
 
-## **10. Deploy an Instance (VM) in Openstack Horizon**
+## **9. Restart a Specific Service (if needed)**
 
-1️⃣ **Open Openstack Dashboard**
+```bash
+sudo systemctl restart devstack@<service-name>
+```
 
-  - Open your browser and go to:
-  ```bash
-  http://your-ec2-public-ip/dashboard
+Replace `<service-name>` with one of: `keystone`, `nova`, `neutron`, `glance`, etc.
+
+---
+
+## **10. Launch a Virtual Machine via Horizon**
+
+### a. Login to Horizon
+
+Navigate to: `http://<your-ec2-public-ip>/dashboard`
+Use credentials:
+
+* Username: `admin`
+* Password: `SuperSecret`
+
+### b. Create Key Pair
+
+* Go to: Project → Compute → Key Pairs
+* Create new key pair
+* Download `.pem` file
+
+### c. Upload OS Image
+
+* Go to: Project → Compute → Images
+* Create Image
+* Use name like `Ubuntu-22.04`
+* Format: `QCOW2`
+* Source URL:
+
   ```
-  - **Login Credentials**:
-    - **Username**: `admin`
-    - **Password**: `SuperSecret`
+  https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+  ```
 
-2️⃣ **Create a New Key Pair**
+### d. Create a Flavor
 
-1. Go to: `Project` → `Compute` → `Key Pairs`
-2. Click: `Create Key Pair`
-3. Enter a Name: Example: `my-key`
-4. Key Type: Select `SSH Key (RSA)`
-5. Click: `Create Key Pair`
-6. Download the Private Key (`.pem` file) and store it safely!
-    - Example: `my-key.pem`
+* Go to: Admin → Compute → Flavors
+* Create new flavor with:
 
-![7](https://github.com/user-attachments/assets/88f6c6a2-bc04-4e29-b37e-f2c8ed00791d)
+  * vCPUs: 1
+  * RAM: 2048 MB
+  * Disk: 10 GB
 
-3️⃣ **Upload an Image (OS for the VM)**
+### e. Set Up Networking
 
-1. Go to: `Project` → `Compute` → `Images`
-2. Click: `Create Image`
-3. Enter Details:
-    - Name: `Ubuntu-22.04`
-    - Image Source: `Upload Image`
-    - Format: `QCOW2`
-    - URL (for Ubuntu 22.04):
-    ```bash
-    https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
-    ```
-4. Click: `Create Image`
-5. Wait for the image to upload.
+* Go to: Project → Network → Networks
+* Create Network:
 
-![8](https://github.com/user-attachments/assets/40cbae48-aebc-4611-8311-977b99e29487)
-
-4️⃣ **Create a Flavor (VM Size)**
-
-1. Go to: `Admin` → `Compute` → `Flavors`
-2. Click: `Create Flavor`
-3. Set the Following:
-    - Name: `small`
-    - vCPUs: `1`
-    - RAM: `2048` MB (2GB)
-    - Disk: `10` GB
-4. Click: `Create Flavor`
-
-![9](https://github.com/user-attachments/assets/576a9810-29a3-405a-89ec-326fb98f4c6a)
-
-5️⃣ **Set Up Networking**
-
-1. Go to: `Project` → `Network` → `Networks`
-2. Click: `Create Network`
-3. Enter Details:
-    - Network Name: `private-net`
-    - Subnet Name: `private-subnet`
-    - Network Address: `192.168.1.0/24`
-4. Click: `Create`
-
-Then, set up a router:
-1. Go to: `Project` → `Network` → `Routers`
-2. Click: `Create Router`
-3. Set Name: `my-router`
-4. Click: `Create Router`
-
-Now `delete` the default `router` and go back to `Networks` and delete the `private network` as well.
-
-![10](https://github.com/user-attachments/assets/1d607160-813d-464b-832e-a8743f464f72)
-
-6️⃣ **Launch an Instance (VM)**
-
-1. Go to: `Project` → `Compute` → `Instances`
-2. Click: `Launch Instance`
-3. Enter Instance Details:
-    - Instance Name: `my-instance`
-    - Flavor: Select `small` (1 vCPU, 2GB RAM)
-    - Image: Select your uploaded image (e.g., `Ubuntu-22.04`)
-    - Network: Select `private-net`
-    - Key Pair: Select `my-key`
-4. Click: `Launch Instance`
-
-![11](https://github.com/user-attachments/assets/9251dad9-2565-4e9d-92b0-c5b959eeff3b)
+  * Name: `private-net`
+  * Subnet: `private-subnet`
+  * CIDR: `192.168.X.0/24`
 
 ---
 
-## **11. Conclusion**
-
-Openstack is now setup and running on your EC2 instance. You can use Openstack to create and deploy Cloud Computing Environments just like how it is shown above.
- 
-For more advanced configurations, refer to the [Devstack Documentation](https://github.com/openstack/devstack)
+Let me know if you want this exported as a `.md` file.
